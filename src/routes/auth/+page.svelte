@@ -1,132 +1,108 @@
 <!-- src/routes/auth/+page.svelte -->
 <script>
   import { authStore } from '$lib/stores/authStore';
+  import { notificationStore } from '$lib/stores/notificationStore';
   import { goto } from '$app/navigation';
-  import { fade } from 'svelte/transition';
 
   let isLogin = true;
   let email = '';
   let password = '';
   let name = '';
-  let error = '';
 
   async function handleSubmit() {
-    error = '';
-    
-    try {
-      if (isLogin) {
-        // Simulate login API call
-        if (email === 'admin@example.com' && password === 'admin123') {
-          authStore.login({
-            email,
-            name: 'Admin User',
-            role: 'admin'
-          });
-          goto('/');
-        } else {
-          throw new Error('Invalid credentials');
-        }
-      } else {
-        // Simulate registration API call
-        if (email && password && name) {
-          authStore.login({
-            email,
-            name,
-            role: 'user'
-          });
-          goto('/');
-        } else {
-          throw new Error('All fields are required');
-        }
+    if (isLogin) {
+      try {
+        await authStore.login(email, password);
+        notificationStore.add({
+          type: 'success',
+          message: 'Welcome back!'
+        });
+        goto('/');
+      } catch (error) {
+        notificationStore.add({
+          type: 'error',
+          message: 'Invalid credentials'
+        });
       }
-    } catch (e) {
-      error = e.message;
+    } else {
+      try {
+        await authStore.register(email, password, name);
+        notificationStore.add({
+          type: 'success',
+          message: 'Registration successful! Please login.'
+        });
+        isLogin = true;
+      } catch (error) {
+        notificationStore.add({
+          type: 'error',
+          message: 'Registration failed. Please try again.'
+        });
+      }
     }
   }
 </script>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full space-y-8" in:fade>
+<div class="min-h-[80vh] flex items-center justify-center">
+  <div class="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
     <div>
-      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-        {isLogin ? 'Sign in to your account' : 'Create a new account'}
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+        {isLogin ? 'Welcome Back!' : 'Create Account'}
       </h2>
-      <p class="mt-2 text-center text-sm text-gray-600">
-        Or
+      <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+        {isLogin ? "Don't have an account?" : "Already have an account?"}
         <button
-          class="font-medium text-blue-600 hover:text-blue-500"
-          on:click={() => {
-            isLogin = !isLogin;
-            error = '';
-          }}
+          on:click={() => isLogin = !isLogin}
+          class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
         >
-          {isLogin ? 'create a new account' : 'sign in to existing account'}
+          {isLogin ? 'Sign up' : 'Sign in'}
         </button>
       </p>
     </div>
-
     <form class="mt-8 space-y-6" on:submit|preventDefault={handleSubmit}>
-      <div class="rounded-md shadow-sm -space-y-px">
-        {#if !isLogin}
-          <div>
-            <label for="name" class="sr-only">Name</label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              bind:value={name}
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="Full name"
-            />
-          </div>
-        {/if}
-        
+      {#if !isLogin}
         <div>
-          <label for="email-address" class="sr-only">Email address</label>
+          <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Name
+          </label>
           <input
-            id="email-address"
-            name="email"
-            type="email"
-            bind:value={email}
+            id="name"
+            type="text"
+            bind:value={name}
             required
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 {isLogin ? 'rounded-t-md' : ''} focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-            placeholder="Email address"
+            class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:text-white"
           />
-        </div>
-        
-        <div>
-          <label for="password" class="sr-only">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            bind:value={password}
-            required
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-            placeholder="Password"
-          />
-        </div>
-      </div>
-
-      {#if error}
-        <div class="rounded-md bg-red-50 p-4">
-          <div class="flex">
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">
-                {error}
-              </h3>
-            </div>
-          </div>
         </div>
       {/if}
-
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Email address
+        </label>
+        <input
+          id="email"
+          type="email"
+          bind:value={email}
+          required
+          class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:text-white"
+        />
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          bind:value={password}
+          required
+          class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:text-white"
+        />
+      </div>
       <div>
         <button
           type="submit"
-          class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          {isLogin ? 'Sign in' : 'Register'}
+          {isLogin ? 'Sign in' : 'Create account'}
         </button>
       </div>
     </form>
