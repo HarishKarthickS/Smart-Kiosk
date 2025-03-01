@@ -1,0 +1,6 @@
+[
+    { "id": 1, "name": "Machine A", "stock": 50, "likes": 0 },
+    { "id": 2, "name": "Machine B", "stock": 30, "likes": 0 },
+    { "id": 3, "name": "Machine C", "stock": 70, "likes": 0 }
+]
+  
